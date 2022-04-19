@@ -18,9 +18,9 @@ const char* mqtt_server = "test.mosquitto.org";
 
 // Topics
 // inTopic: Channel + thingId
-const char* inTopic = "ditto-tutorial/my.test:octopus";
-const char* outTopic = "ditto-tutorial/my.test:octopus";
-const char* thingId = "octopus";
+const char* inTopic = "com.lamp/my.test:octopus";
+const char* outTopic = "com.lamp/my.test:octopus";
+const char* thingId = "my.test:octopus";
 
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
@@ -56,7 +56,7 @@ char* subStr (const char* input_string, char* separator, int segment_number) {
  * Callback for MQTT incoming message
  */
 void messageReceived(char* topic, byte* payload, unsigned int length) {
-    Serial.println();
+    //Serial.println("Msg correctly received!");
 }
 
 /**
@@ -64,7 +64,7 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
  */
 void setup() {
     Serial.begin(BAUD_RATE);
-
+    client.setBufferSize(2048);
     // Set WiFi to station mode and disconnect from an AP if it was previously connected
     Serial.println("Initializing board ...");
 
@@ -106,7 +106,8 @@ void loop() {
         mqttConnect();
     }
     client.loop();
-    //readSensors();
+    delay(500);
+    readSensors();
   
 }
 
@@ -157,12 +158,24 @@ void mqttConnect(){
 
 /**
  * readSensors
- *  Read sensors of octopus board and push them to the globally initialized mqtt topic.
+ *  Read sensors of esp32 board and push them to the globally initialized mqtt topic.
  */
+
+/*
+* TODO
+   cambiare topic source e target
+   oppure mettere filtri sui messaggi arrivati
+*
+*/
 void readSensors(){
     // Readable sensors -> reduced on temp and altitude
+    DynamicJsonDocument doc(1024);
+    doc["thingId"] = thingId;
+    doc["temp"] = 6;
+    doc["alt"] = 7;
+    char jsonChar[100];
     
-
-    //client.publish(outTopic, jsonChar);
-
+    serializeJson(doc, jsonChar);
+    //Serial.print(jsonChar);
+    client.publish(outTopic, jsonChar);
 }
