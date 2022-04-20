@@ -3,13 +3,12 @@
 #include <PubSubClient.h>
 #include <ESP32Ping.h>
 #include <ArduinoJson.h>
+#include <Led.h>
 
-#define PIN 13 //NeoPixl
 #define BAUD_RATE 9600
-#define SEALEVELPRESSURE_HPA (1013.25)
 #define MSG_LENGTH 1024
 
-// TODO: set valid WiFi Credentials and SSID
+// valid WiFi Credentials and SSID
 const char* ssid = "FASTWEB-B482E1";
 const char* pass = "***REMOVED***";
 
@@ -17,16 +16,15 @@ const char* pass = "***REMOVED***";
 const char* mqtt_server = "test.mosquitto.org";
 
 // Topics
-// inTopic: Channel + thingId
-const char* inTopic = "com.lamp/my.test:octopus";
+const char* inTopic = "com.lamp.notification/my.test:octopus";
 const char* outTopic = "com.lamp/my.test:octopus";
 const char* thingId = "my.test:octopus";
-
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
 
 WiFiClient wifiClient;
 PubSubClient client;
+Led* led;
 
 // Function Prototypes
 void initSensors();
@@ -56,7 +54,30 @@ char* subStr (const char* input_string, char* separator, int segment_number) {
  * Callback for MQTT incoming message
  */
 void messageReceived(char* topic, byte* payload, unsigned int length) {
-    //Serial.println("Msg correctly received!");
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, payload);
+    if(doc.size() > 0 && doc.containsKey("path") && doc.containsKey("value")){
+        const char* path = doc["path"];
+        const char* payload = doc["value"];
+
+        char* command = subStr(path, "/", 3);
+
+        if (strcmp(command, "LED") == 0){
+            if((strcmp(payload, "on") == 0) || (strcmp(payload, "ON") == 0)){
+                Serial.println("led on");
+                led->on();
+            }
+            else{
+                if((strcmp(payload, "off") == 0) || (strcmp(payload, "OFF") == 0)){
+                    Serial.println("led off");
+                    led->off();
+                }
+            }
+        }
+    }
+    else{
+        Serial.println("[error] - Deserializing Message Arrived.");
+    }
 }
 
 /**
@@ -65,6 +86,8 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
 void setup() {
     Serial.begin(BAUD_RATE);
     client.setBufferSize(2048);
+    led = new Led(2);
+    led->off();
     // Set WiFi to station mode and disconnect from an AP if it was previously connected
     Serial.println("Initializing board ...");
 
@@ -156,20 +179,9 @@ void mqttConnect(){
     }
 }
 
-/**
- * readSensors
- *  Read sensors of esp32 board and push them to the globally initialized mqtt topic.
- */
-
-/*
-* TODO
-   cambiare topic source e target
-   oppure mettere filtri sui messaggi arrivati
-*
-*/
 void readSensors(){
     // Readable sensors -> reduced on temp and altitude
-    DynamicJsonDocument doc(1024);
+    DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
     doc["temp"] = 6;
     doc["alt"] = 7;
