@@ -55,11 +55,8 @@ char* subStr (const char* input_string, char* separator, int segment_number) {
     return sub;
 }
 
-/**
- * Callback for MQTT incoming message
- */
 void messageReceived(char* topic, byte* payload, unsigned int length) {
-    DynamicJsonDocument doc(1024);
+    DynamicJsonDocument doc(2048);
     deserializeJson(doc, payload);
     if(doc.size() > 0 && doc.containsKey("path") && doc.containsKey("value")){
         const char* path = doc["path"];
@@ -68,10 +65,12 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
         char* command = subStr(path, "/", 3);
 
         if (strcmp(command, "LED") == 0){
+            // Message with subject LED and payload ON
             if((strcmp(payload, "on") == 0) || (strcmp(payload, "ON") == 0)){
                 led->on();
             }
             else{
+                // Message with subject LED and payload OFF
                 if((strcmp(payload, "off") == 0) || (strcmp(payload, "OFF") == 0)){
                     led->off();
                 }
@@ -83,20 +82,21 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
     }
 }
 
-void setup() {
+void initSensors(){
     led = new Led(LED_PIN);
     led->off();
     photoResistor = new PhotoResistor(PHOTORESISTOR_PIN);
+}
+
+void setup() {
     Serial.begin(BAUD_RATE);
     client.setBufferSize(2048);
-    // Set WiFi to station mode and disconnect from an AP if it was previously connected
     Serial.println("Initializing board ...");
-
+    initSensors();
+    // Set WiFi to station mode and disconnect from an AP if it was previously connected
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
     delay(100);
-
-    //initSensors();
     wifiConnect();
     delay(100);
 
@@ -121,24 +121,17 @@ void setup() {
 
 }
 
-/**
- * Main loop.
- */
 void loop() {
   
     if (!client.connected()) {
         mqttConnect();
     }
     client.loop();
-    delay(2000);
+    delay(5000);
     readSensors();
   
 }
 
-/**
- * wifiConnect
- *  Connect to Wifi.
- */
 void wifiConnect(){
     delay(10);
     WiFi.begin(ssid, pass);
@@ -153,10 +146,7 @@ void wifiConnect(){
     Serial.println(WiFi.localIP());
 }
 
-/**
- * mqttConnect
- *  Connect to the mqtt Broker.
- */
+
 void mqttConnect(){
     // Loop until we're reconnected
     while (!client.connected()) {
@@ -178,7 +168,6 @@ void mqttConnect(){
 }
 
 void readSensors(){
-    // Readable sensors -> reduced on temp and altitude
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
     //Waiting for DHT11
