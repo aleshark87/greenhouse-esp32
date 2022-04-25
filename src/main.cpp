@@ -1,12 +1,17 @@
+#include <Settings.h>
 #include <Wire.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ESP32Ping.h>
 #include <ArduinoJson.h>
 #include <Led.h>
+#include <PhotoResistor.h>
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
+
+// Sensors
+PhotoResistor* photoResistor;
 
 // valid WiFi Credentials and SSID
 const char* ssid = "FASTWEB-B482E1";
@@ -16,9 +21,9 @@ const char* pass = "***REMOVED***";
 const char* mqtt_server = "test.mosquitto.org";
 
 // Topics
-const char* inTopic = "com.lamp.notification/my.test:octopus";
-const char* outTopic = "com.lamp/my.test:octopus";
-const char* thingId = "my.test:octopus";
+const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse01";
+const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse01";
+const char* thingId = "com.project.thesis:greenhouse01";
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
 
@@ -64,12 +69,10 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
 
         if (strcmp(command, "LED") == 0){
             if((strcmp(payload, "on") == 0) || (strcmp(payload, "ON") == 0)){
-                Serial.println("led on");
                 led->on();
             }
             else{
                 if((strcmp(payload, "off") == 0) || (strcmp(payload, "OFF") == 0)){
-                    Serial.println("led off");
                     led->off();
                 }
             }
@@ -80,14 +83,12 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
     }
 }
 
-/**
- * Setup the octopus: initialize the sensors and connect to Wifi and MQTT.
- */
 void setup() {
+    led = new Led(LED_PIN);
+    led->off();
+    photoResistor = new PhotoResistor(PHOTORESISTOR_PIN);
     Serial.begin(BAUD_RATE);
     client.setBufferSize(2048);
-    led = new Led(2);
-    led->off();
     // Set WiFi to station mode and disconnect from an AP if it was previously connected
     Serial.println("Initializing board ...");
 
@@ -129,7 +130,7 @@ void loop() {
         mqttConnect();
     }
     client.loop();
-    delay(500);
+    delay(2000);
     readSensors();
   
 }
@@ -166,9 +167,6 @@ void mqttConnect(){
             Serial.print("[info] - Subscribed on: ");
             Serial.print(inTopic);
             Serial.println();
-            // Once connected, publish an announcement...
-            // client.publish(outTopic, "Octopus is online, Baby!");
-            // ... and resubscribe
             client.subscribe(inTopic);
         } else {
             Serial.print("failed, rc=");
@@ -183,8 +181,10 @@ void readSensors(){
     // Readable sensors -> reduced on temp and altitude
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
-    doc["temp"] = 6;
-    doc["alt"] = 7;
+    //Waiting for DHT11
+    doc["temperature"] = 6;
+    doc["humidity"] = 7;
+    doc["brightness"] = photoResistor->getBrightness();
     char jsonChar[100];
     
     serializeJson(doc, jsonChar);
