@@ -23,7 +23,13 @@ int PhotoResistor::getBrightness(){
         return 260;
     }
     else{
-        return lux;
+        if(lux >= 0){
+            return lux;
+        }
+        else{
+            return -1;
+        }
+        
     }
 }
 

@@ -6,16 +6,18 @@
 #include <ArduinoJson.h>
 #include <Led.h>
 #include <PhotoResistor.h>
+#include <DHT11Sensor.h>
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
 
 // Sensors
 PhotoResistor* photoResistor;
+DHT11Sensor* dht11Sensor;
 
 // valid WiFi Credentials and SSID
-const char* ssid = "FASTWEB-B482E1";
-const char* pass = "***REMOVED***";
+const char* ssid = "Redmi";
+const char* pass = "stefano34";
 
 // MQTT Broker
 const char* mqtt_server = "test.mosquitto.org";
@@ -83,6 +85,7 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
 }
 
 void initSensors(){
+    dht11Sensor = new DHT11Sensor(DHT_PIN);
     led = new Led(LED_PIN);
     led->off();
     photoResistor = new PhotoResistor(PHOTORESISTOR_PIN);
@@ -171,8 +174,8 @@ void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
     //Waiting for DHT11
-    doc["temperature"] = 6;
-    doc["humidity"] = 7;
+    doc["temperature"] = dht11Sensor->getTemperature();
+    doc["humidity"] = dht11Sensor->getHumidity();
     doc["brightness"] = photoResistor->getBrightness();
     char jsonChar[100];
     
