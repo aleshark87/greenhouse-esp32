@@ -1,12 +1,12 @@
-#include <Settings.h>
+#include <PinSetup.h>
 #include <Wire.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ESP32Ping.h>
 #include <ArduinoJson.h>
-#include <Led.h>
-#include <PhotoResistor.h>
-#include <DHT11Sensor.h>
+#include <Actuators/Led.h>
+#include <Sensors/PhotoResistor.h>
+#include <Sensors/DHT11Sensor.h>
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
@@ -173,12 +173,11 @@ void mqttConnect(){
 void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
-    //Waiting for DHT11
+    //Sensors Data
     doc["temperature"] = dht11Sensor->getTemperature();
     doc["humidity"] = dht11Sensor->getHumidity();
     doc["brightness"] = photoResistor->getBrightness();
     char jsonChar[100];
-    
     serializeJson(doc, jsonChar);
     //Serial.print(jsonChar);
     client.publish(outTopic, jsonChar);

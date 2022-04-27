@@ -1,4 +1,4 @@
-#include <DHT11Sensor.h>
+#include <Sensors/DHT11Sensor.h>
 
 DHT11Sensor::DHT11Sensor(const int pin){
     this->pin = pin;

@@ -1,5 +1,5 @@
-#ifndef __SETTINGS__
-#define __SETTINGS__
+#ifndef __PINSETUP__
+#define __PINSETUP__
 
 #define LED_PIN 2
 #define DHT_PIN 4
