@@ -174,9 +174,9 @@ void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
     //Sensors Data
-    doc["temperature"] = 5;
+    doc["temperature"] = dht11Sensor->getTemperature();
     doc["humidity"] = dht11Sensor->getHumidity();
-    doc["brightness"] = 4;
+    doc["brightness"] = photoResistor->getBrightness();
     char jsonChar[100];
     serializeJson(doc, jsonChar);
     //Serial.print(jsonChar);

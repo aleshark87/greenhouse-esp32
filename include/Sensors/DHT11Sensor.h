@@ -11,8 +11,8 @@
 class DHT11Sensor {
 public:
     DHT11Sensor(const int pin);
-    float getTemperature();
-    float getHumidity();
+    double getTemperature();
+    int getHumidity();
 private:
     int pin;
     DHT_Unified* dht;
