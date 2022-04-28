@@ -6,6 +6,13 @@ PhotoResistor::PhotoResistor(const int pin){
     pinMode(pin, INPUT);
 }
 
+float calculateResistance(const int analogValue){
+    float resistorVoltage = (float)analogValue / ANALOG_VALUES * REF_VCC;
+    float ldrVoltage = REF_VCC - resistorVoltage;
+    float ldrResistance = ldrVoltage/resistorVoltage * REF_RESISTANCE;
+    return ldrResistance;
+}
+
 int PhotoResistor::getBrightness(){
     long analogValue = analogRead(34);
     float ldrResistance = calculateResistance(analogValue);
@@ -25,10 +32,5 @@ int PhotoResistor::getBrightness(){
     }
 }
 
-float calculateResistance(const int analogValue){
-    float resistorVoltage = (float)analogValue / ANALOG_VALUES * REF_VCC;
-    float ldrVoltage = REF_VCC - resistorVoltage;
-    float ldrResistance = ldrVoltage/resistorVoltage * REF_RESISTANCE;
-    return ldrResistance;
-}
+
 

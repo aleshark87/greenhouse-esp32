@@ -130,7 +130,7 @@ void loop() {
         mqttConnect();
     }
     client.loop();
-    delay(5000);
+    delay(1000);
     readSensors();
   
 }
@@ -174,9 +174,9 @@ void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
     //Sensors Data
-    doc["temperature"] = dht11Sensor->getTemperature();
+    doc["temperature"] = 5;
     doc["humidity"] = dht11Sensor->getHumidity();
-    doc["brightness"] = photoResistor->getBrightness();
+    doc["brightness"] = 4;
     char jsonChar[100];
     serializeJson(doc, jsonChar);
     //Serial.print(jsonChar);
