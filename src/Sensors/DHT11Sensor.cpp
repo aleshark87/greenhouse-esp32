@@ -15,7 +15,6 @@ double round2(double value) {
 double DHT11Sensor::getTemperature(){
     this->dht->temperature().getEvent(&event);
     double roundedTemp = round2(event.temperature);
-    Serial.println(roundedTemp);
     return roundedTemp;
 }
 

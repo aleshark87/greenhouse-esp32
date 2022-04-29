@@ -18,14 +18,17 @@ DHT11Sensor* dht11Sensor;
 // valid WiFi Credentials and SSID
 const char* ssid = "Redmi";
 const char* pass = "stefano34";
+/*const char* ssid = "FASTWEB-B482E1";
+const char* pass = "***REMOVED***";*/
 
 // MQTT Broker
 const char* mqtt_server = "test.mosquitto.org";
 
+const char* thingId = "com.project.thesis:greenhouse";
 // Topics
-const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse01";
-const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse01";
-const char* thingId = "com.project.thesis:greenhouse01";
+const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse";
+const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse";
+
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
 
@@ -140,9 +143,14 @@ void wifiConnect(){
     WiFi.begin(ssid, pass);
     Serial.print("[info] - Connecting to Wifi: ");
     Serial.print(ssid);
+    int wifiNotConnectedCounter = 0;
     while(WiFi.status() != WL_CONNECTED){
         delay(500);
         Serial.print(".");
+        wifiNotConnectedCounter++;
+        if(wifiNotConnectedCounter == 10){
+            ESP.restart();
+        }
     }
     Serial.println();
     Serial.print("[info] - Connected, IP address: ");
