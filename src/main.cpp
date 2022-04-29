@@ -24,10 +24,10 @@ const char* pass = "***REMOVED***";*/
 // MQTT Broker
 const char* mqtt_server = "test.mosquitto.org";
 
-const char* thingId = "com.project.thesis:greenhouse";
+const char* thingId = "com.project.thesis:greenhouse01";
 // Topics
-const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse";
-const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse";
+const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse01";
+const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse01";
 
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
