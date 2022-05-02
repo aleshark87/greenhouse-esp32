@@ -133,7 +133,7 @@ void loop() {
         mqttConnect();
     }
     client.loop();
-    delay(1000);
+    delay(10000);
     readSensors();
   
 }
