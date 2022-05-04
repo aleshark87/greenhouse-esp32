@@ -18,8 +18,6 @@ DHT11Sensor* dht11Sensor;
 // valid WiFi Credentials and SSID
 const char* ssid = "Redmi";
 const char* pass = "stefano34";
-/*const char* ssid = "FASTWEB-B482E1";
-const char* pass = "***REMOVED***";*/
 
 // MQTT Broker
 const char* mqtt_server = "test.mosquitto.org";
