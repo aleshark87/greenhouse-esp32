@@ -69,7 +69,7 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
 
         char* command = subStr(path, "/", 3);
 
-        if (strcmp(command, "LED") == 0){
+        if (strcmp(command, "switchLight") == 0){
             // Message with subject LED and payload ON
             if((strcmp(payload, "on") == 0) || (strcmp(payload, "ON") == 0)){
                 led->on();
@@ -128,13 +128,12 @@ void setup() {
 }
 
 void loop() {
-  
     if (!client.connected()) {
         mqttConnect();
     }
     client.loop();
-    delay(10000);
     readSensors();
+    delay(5000);
   
 }
 
@@ -185,8 +184,9 @@ void readSensors(){
     doc["temperature"] = dht11Sensor->getTemperature();
     doc["humidity"] = dht11Sensor->getHumidity();
     doc["brightness"] = photoResistor->getBrightness();
-    char jsonChar[100];
+    doc["light"] = led->getState();
+    char jsonChar[150];
     serializeJson(doc, jsonChar);
-    //Serial.print(jsonChar);
+    //Serial.print(led->getState());
     client.publish(outTopic, jsonChar);
 }

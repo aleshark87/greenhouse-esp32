@@ -7,8 +7,14 @@ Led::Led(const int pin){
 
 void Led::on(){
     digitalWrite(pin, HIGH);
+    this->state = "on";
 }
 
 void Led::off(){
     digitalWrite(pin, LOW);
+    this->state = "off";
+}
+
+String Led::getState(){
+    return this->state;
 }
