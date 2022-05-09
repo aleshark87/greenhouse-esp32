@@ -10,6 +10,9 @@
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
+#define TEMP_TRESHOLD 20.0
+#define S_CONNERROR 0
+#define S_CONNOK 1
 
 // Sensors
 PhotoResistor* photoResistor;
@@ -33,6 +36,7 @@ const IPAddress remote_ip(5, 196, 95, 208);
 WiFiClient wifiClient;
 PubSubClient client;
 Led* led;
+int state;
 
 // Function Prototypes
 void initSensors();
@@ -111,6 +115,7 @@ void setup() {
         Serial.print("[error] - Host not reachable - Wifi Status: ");
         Serial.print(WiFi.status());
         Serial.println();
+        state = S_CONNERROR;
     }
     delay(100);
     
@@ -126,13 +131,25 @@ void setup() {
 }
 
 void loop() {
-    if (!client.connected()) {
-        mqttConnect();
+
+    switch(state){
+        case S_CONNERROR:
+            if (!client.connected()) {
+                mqttConnect();
+            }
+            state = S_CONNOK;
+            break;
+        case S_CONNOK:
+            if(!client.connected()){
+                state = S_CONNERROR;
+            }
+            else{
+                client.loop();
+                readSensors();
+            }
+            break;
     }
-    client.loop();
-    readSensors();
-    delay(5000);
-  
+    delay(2500);
 }
 
 void wifiConnect(){
@@ -157,7 +174,9 @@ void wifiConnect(){
 
 void mqttConnect(){
     // Loop until we're reconnected
+    int counter = 0;
     while (!client.connected()) {
+        counter++;
         Serial.print("[info] - Attempting MQTT connection...");
         // Attempt to connect
         if (client.connect(thingId)) {
@@ -167,6 +186,10 @@ void mqttConnect(){
             Serial.println();
             client.subscribe(inTopic);
         } else {
+            //If it tries too many times, maybe wifi connection is gone. So restart the ESP
+            if(counter >= 10){
+                ESP.restart();
+            }
             Serial.print("failed, rc=");
             Serial.print(client.state());
             Serial.println(" try again in 2 seconds");
@@ -175,16 +198,37 @@ void mqttConnect(){
     }
 }
 
+void sendHighTemperatureEvent(double temperature){
+    DynamicJsonDocument doc(MSG_LENGTH);
+    doc["thingId"] = thingId;
+    //messageType
+    doc["type"] = "event";
+    //Sensor Data
+    doc["temperature"] = temperature;
+    char jsonChar[100];
+    serializeJson(doc, jsonChar);
+    //Serial.println(jsonChar);
+    client.publish(outTopic, jsonChar);
+}
+
 void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
+    //messageType
+    doc["type"] = "update";
     //Sensors Data
-    doc["temperature"] = dht11Sensor->getTemperature();
+    double temperature = dht11Sensor->getTemperature();
+    doc["temperature"] = temperature;
+    if(temperature > TEMP_TRESHOLD){
+        sendHighTemperatureEvent(temperature);
+    }
     doc["humidity"] = dht11Sensor->getHumidity();
     doc["brightness"] = photoResistor->getBrightness();
     doc["light"] = led->getState();
     char jsonChar[150];
     serializeJson(doc, jsonChar);
-    //Serial.print(led->getState());
+    Serial.println(jsonChar);
     client.publish(outTopic, jsonChar);
 }
+
+
