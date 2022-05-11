@@ -8,6 +8,7 @@
 #include <Sensors/PhotoResistor.h>
 #include <Sensors/DHT11Sensor.h>
 #include <State.h>
+#include <Ticker.h>
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
@@ -17,14 +18,20 @@
 // Sensors
 PhotoResistor* photoResistor;
 DHT11Sensor* dht11Sensor;
+// Actuators
+Led* led;
+WiFiClient wifiClient;
+PubSubClient client;
+Ticker ticker;
+const float tickerPeriod = 1.0;
+volatile boolean tickerFlag;
+int state;
 
 // valid WiFi Credentials and SSID
 const char* ssid = "Redmi";
 const char* pass = "stefano34";
-
 // MQTT Broker
 const char* mqtt_server = "test.mosquitto.org";
-
 const char* thingId = "com.project.thesis:greenhouse01";
 // Topics
 const char* inTopic = "com.greenhouse.notification/com.project.thesis:greenhouse01";
@@ -32,11 +39,6 @@ const char* outTopic = "com.greenhouse/com.project.thesis:greenhouse01";
 
 // 5.196.95.208 -> IP of test.mosquitto.org
 const IPAddress remote_ip(5, 196, 95, 208);
-
-WiFiClient wifiClient;
-PubSubClient client;
-Led* led;
-int state;
 
 // Function Prototypes
 void initSensors();
@@ -96,60 +98,8 @@ void initSensors(){
     photoResistor = new PhotoResistor(PHOTORESISTOR_PIN);
 }
 
-void setup() {
-    Serial.begin(BAUD_RATE);
-    client.setBufferSize(2048);
-    Serial.println("Initializing board ...");
-    initSensors();
-    // Set WiFi to station mode and disconnect from an AP if it was previously connected
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-    wifiConnect();
-    delay(100);
-
-    Serial.println("[info] - Pinging Host.");
-    if (Ping.ping(remote_ip)){
-        Serial.println("[info] - Ping successfull.");
-    } else {
-        Serial.print("[error] - Host not reachable - Wifi Status: ");
-        Serial.print(WiFi.status());
-        Serial.println();
-        state = S_CONNERROR;
-    }
-    delay(100);
-    
-    client.setServer(mqtt_server, 1883);
-    delay(100);
-    client.setClient(wifiClient);
-    delay(100);
-    client.setCallback(messageReceived);
-    delay(100);
-
-    Serial.println("[info] - Setup done. Starting MQTT Connectionloop.");
-
-}
-
-void loop() {
-
-    switch(state){
-        case S_CONNERROR:
-            if (!client.connected()) {
-                mqttConnect();
-            }
-            state = S_CONNOK;
-            break;
-        case S_CONNOK:
-            if(!client.connected()){
-                state = S_CONNERROR;
-            }
-            else{
-                client.loop();
-                readSensors();
-            }
-            break;
-    }
-    delay(2500);
+void tickerINT() {
+  tickerFlag = true;
 }
 
 void wifiConnect(){
@@ -232,4 +182,69 @@ void readSensors(){
     client.publish(outTopic, jsonChar);
 }
 
+void setup() {
+    Serial.begin(BAUD_RATE);
+    client.setBufferSize(2048);
+    Serial.println("Initializing board ...");
+    initSensors();
+    // Set WiFi to station mode and disconnect from an AP if it was previously connected
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+    wifiConnect();
+    delay(100);
+
+    Serial.println("[info] - Pinging Host.");
+    if (Ping.ping(remote_ip)){
+        Serial.println("[info] - Ping successfull.");
+    } else {
+        Serial.print("[error] - Host not reachable - Wifi Status: ");
+        Serial.print(WiFi.status());
+        Serial.println();
+        state = S_CONNERROR;
+    }
+    delay(100);
+    
+    client.setServer(mqtt_server, 1883);
+    delay(100);
+    client.setClient(wifiClient);
+    delay(100);
+    client.setCallback(messageReceived);
+    delay(100);
+
+    Serial.println("[info] - Setup done. Starting MQTT Connectionloop.");
+    ticker.attach(tickerPeriod, tickerINT); tickerFlag = false;
+}
+
+void waitForNextTick(){
+    while(!tickerFlag) {}
+    tickerFlag = false;
+}
+
+void step(){
+    switch(state){
+        case S_CONNERROR:
+            if (!client.connected()) {
+                mqttConnect();
+            }
+            else{
+                state = S_CONNOK;
+            }
+            break;
+        case S_CONNOK:
+            if(client.connected()){
+                client.loop();
+                readSensors();
+            }
+            else{
+                state = S_CONNERROR;
+            }
+            break;
+    }
+}
+
+void loop() {
+    waitForNextTick();
+    step();
+}
 
