@@ -164,13 +164,10 @@ void sendHighTemperatureEvent(double temperature){
 void readSensors(){
     DynamicJsonDocument doc(MSG_LENGTH);
     doc["thingId"] = thingId;
-    //messageType
     doc["type"] = "update";
-    //Sensors Data
     double temperature = dht11Sensor->getTemperature();
     doc["temperature"] = temperature;
     if(temperature > TEMP_TRESHOLD){
-        //Serial.println("sending msg");
         sendHighTemperatureEvent(temperature);
     }
     doc["humidity"] = dht11Sensor->getHumidity();
@@ -178,7 +175,7 @@ void readSensors(){
     doc["light"] = led->getState();
     char jsonChar[150];
     serializeJson(doc, jsonChar);
-    Serial.println(jsonChar);
+    //Serial.println(jsonChar);
     client.publish(outTopic, jsonChar);
 }
 
@@ -222,23 +219,19 @@ void waitForNextTick(){
 }
 
 void step(){
+    if(client.connected()){
+      state = S_CONNOK;
+    }
+    else{
+        state = S_CONNERROR;
+    }
     switch(state){
         case S_CONNERROR:
-            if (!client.connected()) {
-                mqttConnect();
-            }
-            else{
-                state = S_CONNOK;
-            }
+            mqttConnect();
             break;
         case S_CONNOK:
-            if(client.connected()){
-                client.loop();
-                readSensors();
-            }
-            else{
-                state = S_CONNERROR;
-            }
+            client.loop();
+            readSensors();
             break;
     }
 }
