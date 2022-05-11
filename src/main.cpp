@@ -7,12 +7,12 @@
 #include <Actuators/Led.h>
 #include <Sensors/PhotoResistor.h>
 #include <Sensors/DHT11Sensor.h>
+#include <State.h>
 
 #define BAUD_RATE 9600
 #define MSG_LENGTH 1024
-#define TEMP_TRESHOLD 22.3
-#define S_CONNERROR 0
-#define S_CONNOK 1
+#define TEMP_TRESHOLD 24.3
+
 
 // Sensors
 PhotoResistor* photoResistor;
@@ -207,7 +207,7 @@ void sendHighTemperatureEvent(double temperature){
     doc["temperature"] = temperature;
     char jsonChar[100];
     serializeJson(doc, jsonChar);
-    //Serial.println(jsonChar);
+    Serial.println(jsonChar);
     client.publish(outTopic, jsonChar);
 }
 
@@ -220,7 +220,7 @@ void readSensors(){
     double temperature = dht11Sensor->getTemperature();
     doc["temperature"] = temperature;
     if(temperature > TEMP_TRESHOLD){
-        Serial.println("sending msg");
+        //Serial.println("sending msg");
         sendHighTemperatureEvent(temperature);
     }
     doc["humidity"] = dht11Sensor->getHumidity();
@@ -228,7 +228,7 @@ void readSensors(){
     doc["light"] = led->getState();
     char jsonChar[150];
     serializeJson(doc, jsonChar);
-    //Serial.println(jsonChar);
+    Serial.println(jsonChar);
     client.publish(outTopic, jsonChar);
 }
 
